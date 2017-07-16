@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         inventoryList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(MainActivity.this, EditActivity.class);
+                Intent intent = new Intent(MainActivity.this, DetailActivity.class);
                 Uri path = ContentUris.withAppendedId(InventoryEntry.CONTENT_URI, id);
                 intent.setData(path);
                 startActivity(intent);

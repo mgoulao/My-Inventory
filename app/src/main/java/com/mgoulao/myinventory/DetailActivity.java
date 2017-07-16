@@ -1,10 +1,14 @@
 package com.mgoulao.myinventory;
 
+import android.app.LoaderManager;
 import android.content.ContentValues;
+import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.Loader;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -14,24 +18,28 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.mgoulao.myinventory.data.InventoryContract.InventoryEntry;
+import com.mgoulao.myinventory.data.InventoryContract;
 import com.mgoulao.myinventory.data.InventoryDbHelper;
 
-public class EditActivity extends AppCompatActivity {
+public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = "MG";
 
-    EditText nameEditText;
-    EditText priceEditText;
+    TextView nameEditText;
+    TextView priceEditText;
     EditText quantityEditText;
     Button changePictureButton;
+    Button productSale;
+    Button productOrder;
     ImageButton quantityAdd;
     ImageButton quantityRemove;
     ImageView productImage;
@@ -42,39 +50,34 @@ public class EditActivity extends AppCompatActivity {
 
     private boolean mPetHasChanged = false;
 
-    /**
-     * Final for the image intent request code
-     */
-    private final static int SELECT_PICTURE = 200;
     private static final int PRODUCT_LOADER = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_edit);
+        setContentView(R.layout.activity_detail);
 
         getSupportActionBar().setElevation(0);
 
         Intent intent = getIntent();
         path = intent.getData();
 
-        nameEditText = (EditText) findViewById(R.id.name_edit_text);
-        priceEditText = (EditText) findViewById(R.id.price_edit_text);
+        nameEditText = (TextView) findViewById(R.id.name_edit_text);
+        priceEditText = (TextView) findViewById(R.id.price_edit_text);
         quantityEditText = (EditText) findViewById(R.id.quantity_edit_text);
         changePictureButton = (Button) findViewById(R.id.change_picture);
         productImage = (ImageView) findViewById(R.id.product_image);
         quantityAdd = (ImageButton) findViewById(R.id.quant_add);
         quantityRemove = (ImageButton) findViewById(R.id.quant_remove);
+        productSale = (Button) findViewById(R.id.product_sale);
+        productOrder = (Button) findViewById(R.id.product_order);
 
 
-        changePictureButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("image/*");
-                startActivityForResult(intent, SELECT_PICTURE);
-            }
-        });
+        getLoaderManager().initLoader(PRODUCT_LOADER, null, this);
+
+
+        quantityAdd.setOnTouchListener(mTouchListener);
+        quantityRemove.setOnTouchListener(mTouchListener);
 
         quantityAdd.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -93,12 +96,48 @@ public class EditActivity extends AppCompatActivity {
                 if (quantityInt > 0) {
                     quantityEditText.setText(String.valueOf(quantityInt));
                 } else {
-                    Toast.makeText(EditActivity.this, getString(R.string.toast_negative_quantity), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(DetailActivity.this, getString(R.string.toast_negative_quantity), Toast.LENGTH_SHORT).show();
                 }
             }
         });
 
+        productSale.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String quantity = quantityEditText.getText().toString();
+                int quantityInt = Integer.parseInt(quantity) - 1;
+                if (quantityInt > 0) {
+                    quantityEditText.setText(String.valueOf(quantityInt));
+                } else {
+                    Toast.makeText(DetailActivity.this, getString(R.string.toast_negative_quantity), Toast.LENGTH_SHORT).show();
+                }
+                saveProduct();
+                finish();
+            }
+        });
+
+        productOrder.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_SENDTO);
+                intent.setData(Uri.parse("mailto:")); // only email apps should handle this
+                intent.putExtra(Intent.EXTRA_EMAIL, getResources().getString(R.string.supplier_email));
+                String subject = "Order: " + name;
+                intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(intent);
+                }
+            }
+        });
     }
+
+    private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            mPetHasChanged = true;
+            return false;
+        }
+    };
 
     @Override
     public void onBackPressed() {
@@ -123,38 +162,6 @@ public class EditActivity extends AppCompatActivity {
         showUnsavedChangesDialog(discardButtonClickListener);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
-            if (requestCode == SELECT_PICTURE) {
-                // Get the url from data
-                Uri selectedImageUri = data.getData();
-                imageUriString = selectedImageUri.toString();
-
-                // Get the path from the Uri
-                String path = getPathFromURI(selectedImageUri);
-
-                Log.i(TAG, "Image Path : " + imageUriString);
-                // Set the image in ImageView
-                productImage.setImageURI(selectedImageUri);
-
-            }
-        }
-    }
-
-    /* Get the real path from the URI */
-    public String getPathFromURI(Uri contentUri) {
-        String res = null;
-        String[] proj = {MediaStore.Images.Media.DATA};
-        Cursor cursor = getContentResolver().query(contentUri, proj, null, null, null);
-        if (cursor.moveToFirst()) {
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            res = cursor.getString(column_index);
-        }
-        cursor.close();
-        return res;
-    }
-
     private void saveProduct() {
         // Read from input fields
         // Use trim to eliminate leading or trailing white space
@@ -163,15 +170,6 @@ public class EditActivity extends AppCompatActivity {
         double priceDouble = Double.parseDouble(priceString);
         String quantityString = quantityEditText.getText().toString().trim();
         int quantityInt = Integer.parseInt(quantityString);
-        // Check if this is supposed to be a new pet
-        // and check if all the fields in the editor are blank
-        /*if (path == null &&
-                TextUtils.isEmpty(nameString) && TextUtils.isEmpty(breedString) &&
-                TextUtils.isEmpty(weightString) && mGender == PetEntry.GENDER_UNKNOWN) {
-            // Since no fields were modified, we can return early without creating a new pet.
-            // No need to create ContentValues and no need to do any ContentProvider operations.
-            return;
-        }*/
 
         // Create database helper
         InventoryDbHelper mDbHelper = new InventoryDbHelper(this);
@@ -182,19 +180,18 @@ public class EditActivity extends AppCompatActivity {
         // Create a ContentValues object where column names are the keys,
         // and pet attributes from the editor are the values.
         ContentValues values = new ContentValues();
-        values.put(InventoryEntry.COLUMN_NAME, nameString);
-        values.put(InventoryEntry.COLUMN_PRICE, priceDouble);
-        values.put(InventoryEntry.COLUMN_QUANTITY, quantityInt);
-        values.put(InventoryEntry.COLUMN_IMAGE, imageUriString);
+        values.put(InventoryContract.InventoryEntry.COLUMN_NAME, nameString);
+        values.put(InventoryContract.InventoryEntry.COLUMN_PRICE, priceDouble);
+        values.put(InventoryContract.InventoryEntry.COLUMN_QUANTITY, quantityInt);
+        values.put(InventoryContract.InventoryEntry.COLUMN_IMAGE, imageUriString);
 
-        Uri newUri = getContentResolver().insert(InventoryEntry.CONTENT_URI, values);
 
-        // Show a toast message depending on whether or not the insertion was successful
-        if (newUri == null) {
-            Toast.makeText(this, "Error saving the product", Toast.LENGTH_SHORT).show();
+        int rowsUpdated = getContentResolver().update(path, values, null, null);
+
+        if (rowsUpdated == 0) {
+            Toast.makeText(this, "Error with saving pet", Toast.LENGTH_SHORT).show();
         } else {
-            // Otherwise, the insertion was successful and we can display a toast with the row ID.
-            Toast.makeText(this, "Product saved", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Pet saved with row id: " + rowsUpdated, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -221,7 +218,7 @@ public class EditActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.edit_menu, menu);
+        getMenuInflater().inflate(R.menu.detail_menu, menu);
         return true;
     }
 
@@ -235,13 +232,17 @@ public class EditActivity extends AppCompatActivity {
                 saveProduct();
                 // Exit activity
                 finish();
+
+                return true;
+            case R.id.action_delete:
+                showDeleteConfirmationDialog();
                 return true;
             // Respond to a click on the "Up" arrow button in the app bar
             case android.R.id.home:
                 // If the pet hasn't changed, continue with navigating up to parent activity
                 // which is the {@link CatalogActivity}.
                 if (!mPetHasChanged) {
-                    NavUtils.navigateUpFromSameTask(EditActivity.this);
+                    NavUtils.navigateUpFromSameTask(DetailActivity.this);
                     return true;
                 }
 
@@ -253,7 +254,7 @@ public class EditActivity extends AppCompatActivity {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 // User clicked "Discard" button, navigate to parent activity.
-                                NavUtils.navigateUpFromSameTask(EditActivity.this);
+                                NavUtils.navigateUpFromSameTask(DetailActivity.this);
                             }
                         };
 
@@ -312,4 +313,63 @@ public class EditActivity extends AppCompatActivity {
         alertDialog.show();
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String[] projection = {
+                InventoryContract.InventoryEntry._ID,
+                InventoryContract.InventoryEntry.COLUMN_NAME,
+                InventoryContract.InventoryEntry.COLUMN_PRICE,
+                InventoryContract.InventoryEntry.COLUMN_QUANTITY,
+                InventoryContract.InventoryEntry.COLUMN_IMAGE};
+        // This loader will execute the ContentProvider's query method on a background thread
+        return new CursorLoader(this,   // Parent activity context
+                path,   // Provider content URI to query
+                projection,             // Columns to include in the resulting Cursor
+                null,                   // No selection clause
+                null,                   // No selection arguments
+                null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        if (cursor == null || cursor.getCount() < 1) {
+            return;
+        }
+
+        if (cursor.moveToFirst()) {
+            // Find the columns of pet attributes that we're interested in
+            int nameColumnIndex = cursor.getColumnIndex(InventoryContract.InventoryEntry.COLUMN_NAME);
+            int priceColumnIndex = cursor.getColumnIndex(InventoryContract.InventoryEntry.COLUMN_PRICE);
+            int quantityColumnIndex = cursor.getColumnIndex(InventoryContract.InventoryEntry.COLUMN_QUANTITY);
+            int imageColumnIndex = cursor.getColumnIndex(InventoryContract.InventoryEntry.COLUMN_IMAGE);
+
+            // Extract out the value from the Cursor for the given column index
+            name = cursor.getString(nameColumnIndex);
+            double price = cursor.getDouble(priceColumnIndex);
+            int quantity = cursor.getInt(quantityColumnIndex);
+            String image = cursor.getString(imageColumnIndex);
+
+            imageUriString = image;
+
+            // Update the views on the screen with the values from the database
+            nameEditText.setText(name);
+            priceEditText.setText(Double.toString(price));
+            quantityEditText.setText(Integer.toString(quantity));
+            Uri imageUri = Uri.parse(image);
+            Bitmap mIcon11 = null;
+            try {
+                mIcon11 = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            productImage.setImageBitmap(mIcon11);
+
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
+    }
 }
