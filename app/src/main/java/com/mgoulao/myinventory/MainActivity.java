@@ -6,10 +6,11 @@ import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,6 +18,8 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.mgoulao.myinventory.data.InventoryContract.InventoryEntry;
+
+import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -80,6 +83,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     public void deleteAll() {
         getContentResolver().delete(InventoryEntry.CONTENT_URI, null, null);
     }
+
+
 
 
     @Override
