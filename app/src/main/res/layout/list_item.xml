@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingStart="@dimen/standart_padding"
+    android:paddingEnd="@dimen/standart_padding"
+    android:paddingTop="@dimen/list_item_padding_top_bottom"
+    android:paddingBottom="@dimen/list_item_padding_top_bottom">
+    <ImageView
+        android:id="@+id/item_image"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="center"
+        tools:src="@drawable/placehold"/>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="@dimen/list_item_text_margin_start"
+        android:layout_gravity="center">
+        <TextView
+            android:id="@+id/product_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            tools:text="Name"
+            android:textSize="@dimen/list_item_name_text_size"
+            android:textColor="@color/text_black"/>
+        <TextView
+            android:id="@+id/product_quantity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            tools:text="Quantity: 12"
+            android:textSize="@dimen/list_item_quantity_text_size"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/product_price"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:textColor="@color/text_black"
+        android:textSize="@dimen/list_item_price_text_size"
+        tools:text="10.00 €" />
+
+</LinearLayout>

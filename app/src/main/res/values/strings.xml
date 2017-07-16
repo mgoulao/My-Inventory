@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">My Inventory</string>
+    <string name="add_activity">Add Product</string>
+    <string name="edit_activity">Edit Product</string>
+
+    <string name="edit_change_image">Change Image</string>
+    <string name="edit_name">Name</string>
+    <string name="edit_price">Price</string>
+    <string name="edit_quantity">Quantity</string>
+    <string name="edit_delete_successful">Product deleted</string>
+    <string name="edit_delete_failed">Error with deleting product</string>
+    <string name="edit_sale">Sale</string>
+    <string name="edit_order">Order More</string>
+
+    <string name="supplier_email">orders@supplier.com</string>
+
+    <string name="action_delete_all">Delete All</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_save">Save</string>
+
+    <string name="price_item">€</string>
+
+    <string name="toast_negative_quantity">Quantity can\'t be negative</string>
+
+    <string name="empty_view_title_text">Your inventory is empty</string>
+    <string name="empty_view_subtitle_text">Add some products</string>
+
+
+    <string name="unsaved_changes_dialog_msg">Discard your changes and quit editing?</string>
+    <string name="discard">Discard</string>
+    <string name="keep_editing">Keep Editing</string>
+
+    <string name="delete_dialog_msg">Delete this product?</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+
+</resources>
