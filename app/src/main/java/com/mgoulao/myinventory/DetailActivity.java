@@ -106,7 +106,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             public void onClick(View v) {
                 String quantity = quantityEditText.getText().toString();
                 int quantityInt = Integer.parseInt(quantity) - 1;
-                if (quantityInt > 0) {
+                if (quantityInt >= 0) {
                     quantityEditText.setText(String.valueOf(quantityInt));
                 } else {
                     Toast.makeText(DetailActivity.this, getString(R.string.toast_negative_quantity), Toast.LENGTH_SHORT).show();
