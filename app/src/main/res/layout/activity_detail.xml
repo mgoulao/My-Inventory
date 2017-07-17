@@ -54,13 +54,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/edit_price"
+            android:textColor="@color/text_black"
             android:textSize="@dimen/detail_title_text_size" />
 
         <TextView
             android:id="@+id/price_edit_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/standart_padding" />
+            android:layout_marginStart="@dimen/standart_padding"
+            android:textColor="@color/text_black"
+            android:textSize="@dimen/detail_name_text_size" />
     </LinearLayout>
 
     <LinearLayout
@@ -75,6 +78,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/edit_quantity"
+            android:textColor="@color/text_black"
             android:textSize="@dimen/detail_title_text_size" />
 
         <LinearLayout

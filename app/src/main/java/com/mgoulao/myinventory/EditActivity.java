@@ -3,15 +3,14 @@ package com.mgoulao.myinventory;
 import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -40,13 +39,14 @@ public class EditActivity extends AppCompatActivity {
     String name;
     Uri path;
 
-    private boolean mPetHasChanged = false;
+    private boolean mproductHasChanged = false;
 
     /**
      * Final for the image intent request code
      */
     private final static int SELECT_PICTURE = 200;
     private static final int PRODUCT_LOADER = 0;
+    private static final int IMAGE_REQUEST_CODE = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,8 +70,9 @@ public class EditActivity extends AppCompatActivity {
         changePictureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("image/*");
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("image/jpeg");
                 startActivityForResult(intent, SELECT_PICTURE);
             }
         });
@@ -102,8 +103,8 @@ public class EditActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        // If the pet hasn't changed, continue with handling back button press
-        if (!mPetHasChanged) {
+        // If the product hasn't changed, continue with handling back button press
+        if (!mproductHasChanged) {
             super.onBackPressed();
             return;
         }
@@ -125,50 +126,41 @@ public class EditActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
-            if (requestCode == SELECT_PICTURE) {
-                // Get the url from data
+        if (resultCode == RESULT_OK && requestCode == SELECT_PICTURE) {
+            try {
                 Uri selectedImageUri = data.getData();
                 imageUriString = selectedImageUri.toString();
 
-                // Get the path from the Uri
-                String path = getPathFromURI(selectedImageUri);
+                Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImageUri);
 
-                Log.i(TAG, "Image Path : " + imageUriString);
-                // Set the image in ImageView
-                productImage.setImageURI(selectedImageUri);
+                productImage.setImageBitmap(bitmap);
 
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
 
-    /* Get the real path from the URI */
-    public String getPathFromURI(Uri contentUri) {
-        String res = null;
-        String[] proj = {MediaStore.Images.Media.DATA};
-        Cursor cursor = getContentResolver().query(contentUri, proj, null, null, null);
-        if (cursor.moveToFirst()) {
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            res = cursor.getString(column_index);
-        }
-        cursor.close();
-        return res;
-    }
 
     private void saveProduct() {
         // Read from input fields
         // Use trim to eliminate leading or trailing white space
         String nameString = nameEditText.getText().toString().trim();
         String priceString = priceEditText.getText().toString().trim();
-        double priceDouble = Double.parseDouble(priceString);
+        double priceDouble;
+        if (priceString.equals("")) {
+            priceDouble = Double.parseDouble("0");
+        } else {
+            priceDouble = Double.parseDouble(priceString);
+        }
         String quantityString = quantityEditText.getText().toString().trim();
         int quantityInt = Integer.parseInt(quantityString);
-        // Check if this is supposed to be a new pet
+        // Check if this is supposed to be a new product
         // and check if all the fields in the editor are blank
         /*if (path == null &&
                 TextUtils.isEmpty(nameString) && TextUtils.isEmpty(breedString) &&
-                TextUtils.isEmpty(weightString) && mGender == PetEntry.GENDER_UNKNOWN) {
-            // Since no fields were modified, we can return early without creating a new pet.
+                TextUtils.isEmpty(weightString) && mGender == productEntry.GENDER_UNKNOWN) {
+            // Since no fields were modified, we can return early without creating a new product.
             // No need to create ContentValues and no need to do any ContentProvider operations.
             return;
         }*/
@@ -180,7 +172,7 @@ public class EditActivity extends AppCompatActivity {
         SQLiteDatabase database = mDbHelper.getWritableDatabase();
 
         // Create a ContentValues object where column names are the keys,
-        // and pet attributes from the editor are the values.
+        // and product attributes from the editor are the values.
         ContentValues values = new ContentValues();
         values.put(InventoryEntry.COLUMN_NAME, nameString);
         values.put(InventoryEntry.COLUMN_PRICE, priceDouble);
@@ -199,7 +191,7 @@ public class EditActivity extends AppCompatActivity {
     }
 
     /**
-     * Perform the deletion of the pet in the database.
+     * Perform the deletion of the product in the database.
      */
     private void deleteProduct() {
         if (path != null) {
@@ -231,16 +223,16 @@ public class EditActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             // Respond to a click on the "Save" menu option
             case R.id.action_save:
-                // Save pet to database
+                // Save product to database
                 saveProduct();
                 // Exit activity
                 finish();
                 return true;
             // Respond to a click on the "Up" arrow button in the app bar
             case android.R.id.home:
-                // If the pet hasn't changed, continue with navigating up to parent activity
+                // If the product hasn't changed, continue with navigating up to parent activity
                 // which is the {@link CatalogActivity}.
-                if (!mPetHasChanged) {
+                if (!mproductHasChanged) {
                     NavUtils.navigateUpFromSameTask(EditActivity.this);
                     return true;
                 }
@@ -274,7 +266,7 @@ public class EditActivity extends AppCompatActivity {
         builder.setNegativeButton(R.string.keep_editing, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked the "Keep editing" button, so dismiss the dialog
-                // and continue editing the pet.
+                // and continue editing the product.
                 if (dialog != null) {
                     dialog.dismiss();
                 }
@@ -293,14 +285,14 @@ public class EditActivity extends AppCompatActivity {
         builder.setMessage(R.string.delete_dialog_msg);
         builder.setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                // User clicked the "Delete" button, so delete the pet.
+                // User clicked the "Delete" button, so delete the product.
                 deleteProduct();
             }
         });
         builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked the "Cancel" button, so dismiss the dialog
-                // and continue editing the pet.
+                // and continue editing the product.
                 if (dialog != null) {
                     dialog.dismiss();
                 }

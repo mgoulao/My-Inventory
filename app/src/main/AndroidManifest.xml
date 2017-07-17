@@ -27,7 +27,8 @@
         <provider
             android:name=".data.InventoryProvider"
             android:authorities="com.mgoulao.myinventory"
-            android:exported="false" />
+            android:exported="false"
+            android:grantUriPermissions="true"/>
 
         <activity android:name=".DetailActivity">
             <meta-data

@@ -7,7 +7,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -28,7 +27,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.mgoulao.myinventory.data.InventoryContract;
-import com.mgoulao.myinventory.data.InventoryDbHelper;
 
 public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -48,7 +46,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     String name;
     Uri path;
 
-    private boolean mPetHasChanged = false;
+    private boolean mProductHasChanged = false;
 
     private static final int PRODUCT_LOADER = 0;
 
@@ -93,7 +91,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             public void onClick(View v) {
                 String quantity = quantityEditText.getText().toString();
                 int quantityInt = Integer.parseInt(quantity) - 1;
-                if (quantityInt > 0) {
+                if (quantityInt >= 0) {
                     quantityEditText.setText(String.valueOf(quantityInt));
                 } else {
                     Toast.makeText(DetailActivity.this, getString(R.string.toast_negative_quantity), Toast.LENGTH_SHORT).show();
@@ -134,15 +132,14 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
-            mPetHasChanged = true;
+            mProductHasChanged = true;
             return false;
         }
     };
 
     @Override
     public void onBackPressed() {
-        // If the pet hasn't changed, continue with handling back button press
-        if (!mPetHasChanged) {
+        if (!mProductHasChanged) {
             super.onBackPressed();
             return;
         }
@@ -171,14 +168,8 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         String quantityString = quantityEditText.getText().toString().trim();
         int quantityInt = Integer.parseInt(quantityString);
 
-        // Create database helper
-        InventoryDbHelper mDbHelper = new InventoryDbHelper(this);
-
-        // Gets the database in write mode
-        SQLiteDatabase database = mDbHelper.getWritableDatabase();
-
         // Create a ContentValues object where column names are the keys,
-        // and pet attributes from the editor are the values.
+        // and product attributes from the editor are the values.
         ContentValues values = new ContentValues();
         values.put(InventoryContract.InventoryEntry.COLUMN_NAME, nameString);
         values.put(InventoryContract.InventoryEntry.COLUMN_PRICE, priceDouble);
@@ -189,14 +180,14 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         int rowsUpdated = getContentResolver().update(path, values, null, null);
 
         if (rowsUpdated == 0) {
-            Toast.makeText(this, "Error with saving pet", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Error with saving product", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "Pet saved with row id: " + rowsUpdated, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Product saved with row id: " + rowsUpdated, Toast.LENGTH_SHORT).show();
         }
     }
 
     /**
-     * Perform the deletion of the pet in the database.
+     * Perform the deletion of the product in the database.
      */
     private void deleteProduct() {
         if (path != null) {
@@ -228,9 +219,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         switch (item.getItemId()) {
             // Respond to a click on the "Save" menu option
             case R.id.action_save:
-                // Save pet to database
                 saveProduct();
-                // Exit activity
                 finish();
 
                 return true;
@@ -239,9 +228,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                 return true;
             // Respond to a click on the "Up" arrow button in the app bar
             case android.R.id.home:
-                // If the pet hasn't changed, continue with navigating up to parent activity
-                // which is the {@link CatalogActivity}.
-                if (!mPetHasChanged) {
+                if (!mProductHasChanged) {
                     NavUtils.navigateUpFromSameTask(DetailActivity.this);
                     return true;
                 }
@@ -275,7 +262,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         builder.setNegativeButton(R.string.keep_editing, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked the "Keep editing" button, so dismiss the dialog
-                // and continue editing the pet.
+                // and continue editing the product.
                 if (dialog != null) {
                     dialog.dismiss();
                 }
@@ -294,14 +281,14 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         builder.setMessage(R.string.delete_dialog_msg);
         builder.setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                // User clicked the "Delete" button, so delete the pet.
+                // User clicked the "Delete" button, so delete the product.
                 deleteProduct();
             }
         });
         builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked the "Cancel" button, so dismiss the dialog
-                // and continue editing the pet.
+                // and continue editing the product.
                 if (dialog != null) {
                     dialog.dismiss();
                 }
@@ -337,7 +324,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         }
 
         if (cursor.moveToFirst()) {
-            // Find the columns of pet attributes that we're interested in
+            // Find the columns of product attributes that we're interested in
             int nameColumnIndex = cursor.getColumnIndex(InventoryContract.InventoryEntry.COLUMN_NAME);
             int priceColumnIndex = cursor.getColumnIndex(InventoryContract.InventoryEntry.COLUMN_PRICE);
             int quantityColumnIndex = cursor.getColumnIndex(InventoryContract.InventoryEntry.COLUMN_QUANTITY);
